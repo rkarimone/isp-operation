@@ -26,3 +26,21 @@ service wireguard start
 ping -c 4 ping 172.16.0.1
 
 ```
+
+# BDCOM Switch LACP+TRUNK
+
+```
+!
+interface Port-aggregator 1
+switchport mode trunk
+!
+interface GigaEthernet0/1
+switchport mode trunk
+aggregator-group 1 mode lacp
+!
+interface GigaEthernet0/2
+switchport mode trunk
+aggregator-group 1 mode lacp
+!
+!
+```
