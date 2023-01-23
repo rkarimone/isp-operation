@@ -101,3 +101,149 @@ ipfw -q add 10002 nat 10 ip from 10.16.32.0/24 to any out via re2
 ipfw -q add 10003 nat 10 ip from 10.20.24.0/30 to any out via re2
 ipfw -q add 10070 nat 10 ip from any to 43.230.123.57  in via re2 ## IN
 
+
+
+
+root@BSDGW2:~ # cat /etc/rc.conf
+####
+hostname="BSDGW2"
+ifconfig_re2="inet 43.230.123.57 netmask 255.255.255.240"
+defaultrouter="43.230.123.49"
+sshd_enable="YES"
+# Set dumpdev to "AUTO" to enable crash dumps, "NO" to disable
+dumpdev="AUTO"
+zfs_enable="YES"
+#########
+#mpd_enable="YES"
+
+gateway_enable="YES"
+
+###############
+vlans_ix1="450 451"
+#ifconfig_ix1_450="inet 10.20.24.1/30 up"
+#ifconfig_ix1_451="inet 10.20.24.5/30 up"
+ifconfig_ix1_450="up"
+ifconfig_ix1_451="up"
+
+
+###############
+ifconfig_re0="up"
+ifconfig_re1="up"
+ifconfig_ix0="up"
+ifconfig_ix1="up"
+#ifconfig_ix1.450="up"
+#ifconfig_ix1.451="up"
+#cloned_interfaces="lagg0"
+#ifconfig_lagg0="laggproto loadbalance laggport re0 laggport re1"
+
+firewall_enable="YES"
+firewall_script="/etc/ipfw-isp1gw1.sh"
+firewall_nat_enable="YES"
+#firewall_nat_interface="re2"
+firewall_type="open"
+firewall_logging="no"
+
+#/usr/bin/mpd5-server
+
+
+root@BSDGW2:~ # cat /usr/bin/mpd5-server
+#!/bin/sh
+/usr/local/sbin/mpd5 -b -d /usr/local/etc/mpd50 -p /var/run/vlan450.pid -s pppoe_server
+/usr/local/sbin/mpd5 -b -d /usr/local/etc/mpd51 -p /var/run/vlan451.pid -s pppoe_server1
+
+ cat /usr/local/etc/mpd50/mpd.conf | more
+ 
+################
+startup:
+        set user omni tech admin
+        set console self 127.0.0.1 5005
+        set console open
+        set web self 0.0.0.0 5080
+        set web open
+
+default:
+        load pppoe_server
+
+
+pppoe_server:
+        create bundle template poes_b
+        set ippool add p0 10.16.33.0 10.16.33.254
+        set ipcp ranges 10.20.30.1/32 ippool p0
+        set ipcp dns 9.9.9.11
+        set ipcp no vjcomp
+
+        set iface group pppoe
+        set iface route default
+        set iface idle 0
+        set iface disable on-demand
+        set iface disable proxy-arp
+        set iface enable tcpmssfix
+        set iface mtu 1500
+
+        create link template poes_l pppoe
+        set link action bundle poes_b
+        set auth max-logins 1
+        set pppoe iface ix1.450
+        set link no multilink
+        set link no pap chap
+        set link enable pap
+        set link keep-alive 60 180
+        set link max-redial -1
+        set link mru 1492
+        set link latency 1
+        set link enable incoming
+
+        set radius server 103.144.200.41 "omni-one" 1812
+        set radius retries 3
+        set radius timeout 10
+        set auth enable radius-auth
+        set radius me 43.230.123.57
+
+
+
+root@BSDGW2:~ # cat /usr/local/etc/mpd51mpd.conf | more
+################
+startup:
+        set user omni tech admin
+        set console self 127.0.0.1 5006
+        set console open
+        set web self 0.0.0.0 5081
+        set web open
+
+default:
+        load pppoe_server1
+
+
+pppoe_server1:
+        create bundle template poes_b
+        set ippool add p0 10.16.35.0 10.16.35.254
+        set ipcp ranges 10.20.30.2/32 ippool p0
+        set ipcp dns 9.9.9.11
+        set ipcp no vjcomp
+
+        set iface group pppoe
+        set iface route default
+        set iface idle 0
+        set iface disable on-demand
+        set iface disable proxy-arp
+        set iface enable tcpmssfix
+        set iface mtu 1500
+
+        create link template poes_l pppoe
+        set link action bundle poes_b
+        set auth max-logins 1
+        set pppoe iface ix1.451
+        set link no multilink
+        set link no pap chap
+        set link enable pap
+        set link keep-alive 60 180
+        set link max-redial -1
+        set link mru 1492
+        set link latency 1
+        set link enable incoming
+
+        set radius server 103.144.200.41 "omni-one" 1812
+        set radius retries 3
+        set radius timeout 10
+        set auth enable radius-auth
+        set radius me 43.230.123.57
