@@ -1,13 +1,9 @@
 
+01- Install Ubuntu 20.04/22.04 (VM/LXC Container)
 
-https://www.geoghegan.ca/unbound-adblock.html
-
-
-sudo apt update
-sudo apt upgrade -y
-sudo apt install unbound wget curl vim -y
-
-
+apt update
+apt upgrade -y
+apt install unbound wget curl vim sudo -y
 
 
 apt -y install locales-all
@@ -15,14 +11,9 @@ localectl set-locale LANG=en_US.UTF-8 LANGUAGE="en_US:en"
 export LANG=en_US.UTF-8
 
 cd /root/
-vim .profile 	//export LANG=en_GB.UTF-8
-vim .bashrc 	//export LANG=en_GB.UTF-8
-
 
 echo "export LANG=en_US.UTF-8" >> .profile
 echo "export LANG=en_US.UTF-8" >> .bashrc
-
-
 
 systemctl enable unbound
 systemctl start unbound
@@ -34,28 +25,14 @@ rm -fr /etc/resolv.conf
 touch /etc/resolv.conf
 echo "nameserver 127.0.0.1" > /etc/resolv.conf
 
-
-
-http://103.115.101.218/apcl
-
-
-root@Cyclone-UDNS1:/etc/unbound# cat unbound.conf
+root@# cat /etc/unbound/unbound.conf
 # Unbound configuration file for Debian.
-#
-# See the unbound.conf(5) man page.
-#
-# See /usr/share/doc/unbound/examples/unbound.conf for a commented
-# reference config file.
-#
-# The following line includes additional configuration files from the
 # /etc/unbound/unbound.conf.d directory.
 include: "/etc/unbound/unbound.conf.d/*.conf"
-#include: /etc/unbound/adblock.conf
 
 
-
-
-root@Cyclone-UDNS1:/etc/unbound/unbound.conf.d# cat myunbound.conf
+root@# /etc/unbound/unbound.conf.d
+root@# vim myunbound.conf
 #
 server:
 port: 53
@@ -90,6 +67,10 @@ do-ip4: yes
 do-ip6: no
 do-udp: yes
 do-tcp: yes
+forward-zone:
+        name: "."
+        forward-addr: 8.8.8.8
+        forward-addr: 1.1.1.1
 remote-control:
 control-enable: yes
 control-port: 953
@@ -100,37 +81,42 @@ control-interface: 0.0.0.0
 systemctl restart unbound
 
 
-cd ~
-
+### APPLY ADSENSE BLOCK
+cd /root/
 wget https://geoghegan.ca/pub/unbound-adblock/0.4/unbound-adblock.sh
 useradd -s /sbin/nologin _adblock
 install -m 755 -o root -g bin unbound-adblock.sh /usr/local/bin/unbound-adblock.sh
-
-visudo
-_adblock    ALL=(root) NOPASSWD: /bin/systemctl restart unbound
-
-
-
 touch /etc/unbound/adblock.conf
 chown _adblock:_adblock /etc/unbound/adblock.conf
+chmod +x /usr/local/bin/unbound-adblock.sh
+
+vim /etc/sudoers
+
+# User privilege specification
+root    ALL=(ALL:ALL) ALL
+_adblock    ALL=(root) NOPASSWD: /bin/systemctl restart unbound
+
+chown _adblock /usr/local/bin/unbound-adblock.sh -linux
 sudo -u _adblock sh /usr/local/bin/unbound-adblock.sh -linux
-sudo -u _adblock sh /usr/local/bin/unbound-adblock.sh -linux
 
 
+# vim /usr/local/bin/unbound-adblock.sh
 
-
-
-root@Cyclone-UDNS1:/# vim /usr/bin/cyclone-unbound-reload.sh
+vim /usr/bin/cyclone-unbound-reload.sh
 #!/bin/bash
 sudo -u _adblock sh /usr/local/bin/unbound-adblock.sh -linux
 echo "server:" > /etc/unbound/unbound.conf.d/adblock.conf
 cat /etc/unbound/adblock.conf >> /etc/unbound/unbound.conf.d/adblock.conf
 systemctl restart unbound
 
-
 chmod +x /usr/bin/cyclone-unbound-reload.sh
+unbound-checkconf /etc/unbound/unbound.conf.d/myunbound.conf
+/usr/bin/cyclone-unbound-reload.sh
+tail -f /var/log/syslog
 
 
+
+##### UNBOUND LOGGING TO SYSLOG
 
 
 root@Cyclone-UDNS1:~# cat /opt/iplog_format.sh
@@ -299,4 +285,4 @@ EMRAN HOSSEN
 
 FAHSC02-21412022-12-21MR67368
 
-
+https://www.geoghegan.ca/unbound-adblock.html
