@@ -172,6 +172,15 @@ echo -e "Format Done ..."
 
 sudo chmod +x /opt/iplog_format.sh
 
+
+## In clinet mikrotik
+/ip firewall nat add action=dst-nat chain=dstnat comment=_DNS_Forward_ dst-port=53 protocol=tcp to-addresses=100.64.100.110 to-ports=53	
+/ip firewall nat add action=dst-nat chain=dstnat comment=_DNS_Forward_ dst-port=53 protocol=udp to-addresses=100.64.100.110 to-ports=53	
+/ip firewall nat add action=dst-nat chain=dstnat comment=_DNS_Forward_ dst-port=853 protocol=tcp to-addresses=100.64.100.110 to-ports=53	
+/ip firewall nat add action=dst-nat chain=dstnat comment=_DNS_Forward_ dst-port=853 protocol=udp to-addresses=100.64.100.110 to-ports=53
+
+
+
 root@# vim  /usr/bin/rsync_log.sh
 #!/bin/bash
 find /opt/ipslog/ -type f -ctime +1 -exec rm -fr {} \;
