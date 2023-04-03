@@ -1,10 +1,12 @@
 
-01- Install Ubuntu 20.04/22.04 (VM/LXC Container)
+01- Install Ubuntu 20.04/22.04 (VM/LXC Container) and Install Unbound
 
 apt update
 apt upgrade -y
-apt install unbound wget curl vim sudo -y
+apt install unbound wget curl vim sudo rsyslog -y
 
+
+02- Fix System Default Language
 
 apt -y install locales-all
 localectl set-locale LANG=en_US.UTF-8 LANGUAGE="en_US:en"
@@ -19,11 +21,16 @@ systemctl enable unbound
 systemctl start unbound
 
 
+03- Fix default dns resolver
+
 sudo systemctl stop systemd-resolved
 sudo systemctl disable systemd-resolved.service
 rm -fr /etc/resolv.conf
 touch /etc/resolv.conf
 echo "nameserver 127.0.0.1" > /etc/resolv.conf
+
+
+04- Configure Unbound Config Files
 
 root@# cat /etc/unbound/unbound.conf
 # Unbound configuration file for Debian.
@@ -31,7 +38,7 @@ root@# cat /etc/unbound/unbound.conf
 include: "/etc/unbound/unbound.conf.d/*.conf"
 
 
-root@# /etc/unbound/unbound.conf.d
+root@# cd /etc/unbound/unbound.conf.d
 root@# vim myunbound.conf
 #
 server:
@@ -81,7 +88,8 @@ control-interface: 0.0.0.0
 systemctl restart unbound
 
 
-### APPLY ADSENSE BLOCK
+05- APPLY ADSENSE BLOCK
+
 cd /root/
 wget https://geoghegan.ca/pub/unbound-adblock/0.4/unbound-adblock.sh
 useradd -s /sbin/nologin _adblock
@@ -116,10 +124,32 @@ tail -f /var/log/syslog
 
 
 
-##### UNBOUND LOGGING TO SYSLOG
+06- UNBOUND LOGGING TO SYSLOG with Proper TimeStamp
 
 
-root@Cyclone-UDNS1:~# cat /opt/iplog_format.sh
+vim /etc/rsyslog.conf
+
+###########################
+#### GLOBAL DIRECTIVES ####
+###########################
+
+#
+# Use traditional timestamp format.
+# To enable high precision timestamps, comment out the following line.
+#
+# $ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
+#
+### Create Custome Log Format with the following....
+#
+$template myformat,"%TIMESTAMP:1:10:date-rfc3339% %TIMESTAMP:19:12:date-rfc3339% %syslogtag%%msg%\n"
+$ActionFileDefaultTemplate myformat
+# Filter duplicated messages
+$RepeatedMsgReduction on
+
+
+sudo systemctl restart rsyslog
+
+root@# vim /opt/iplog_format.sh
 #!/bin/bash
 date_time=`date +%d-%m-%Y-%H%M%S`;
 echo -e "Copying ..."
@@ -138,37 +168,12 @@ rm -fr /opt/$date_time-unbound-temp.log
 echo -e "Format Done ..."
 
 
-
-
-
 root@Cyclone-UDNS1:~# cat  /home/udns1/rsync_log.sh
 #!/bin/bash
 find /opt/ipslog/ -type f -ctime +3 -exec rm -fr {} \;
 sleep 2
 rsync -av --rsh='ssh -p7860' /opt/ipslog/ root@163.47.157.205:/vol1/data/UDNS1-LOG/
 
-
-cat /etc/rsyslog.conf
-
-###########################
-#### GLOBAL DIRECTIVES ####
-###########################
-
-#
-# Use traditional timestamp format.
-# To enable high precision timestamps, comment out the following line.
-#
-# $ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
-
-$template myformat,"%TIMESTAMP:1:10:date-rfc3339% %TIMESTAMP:19:12:date-rfc3339% %syslogtag%%msg%\n"
-$ActionFileDefaultTemplate myformat
-
-
-# Filter duplicated messages
-$RepeatedMsgReduction on
-
-
-systemctl restart rsyslog
 
 
 root@log:/data/UDNS1-LOG# cat /etc/unbound/unbound.conf.d/myunbound.conf
