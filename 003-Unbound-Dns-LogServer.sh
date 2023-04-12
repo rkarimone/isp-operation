@@ -208,3 +208,171 @@ https://www.geoghegan.ca/unbound-adblock.html
 
 
 
+
+
+
+### LOG UI
+apt install nginx nginx-extras
+cp -r /etc/nginx/nginx.conf /opt/nginx.conf.orig
+echo "" > /etc/nginx/nginx.conf
+rm /etc/nginx/sites-enabled/default
+
+cp -r /home/dotetc/.etc /mnt/log_store/   ### COLLECT THE NGINX INDEX PLUGINGS
+
+
+
+############
+user www-data;
+worker_processes auto;
+worker_rlimit_nofile 100000;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+        worker_connections 4000;
+        multi_accept on;
+        use epoll;
+}
+
+http {
+
+        ##
+        # Basic Settings
+        ##
+        open_file_cache max=200000 inactive=20s;
+        open_file_cache_valid 30s;
+        open_file_cache_min_uses 2;
+        open_file_cache_errors on;
+        access_log off;
+        
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;   
+        types_hash_max_size 2048;
+        server_tokens off;
+
+        keepalive_timeout 30;
+        keepalive_requests 100000;
+        reset_timedout_connection on;
+        client_body_timeout 10;
+        send_timeout 2;
+
+        # server_names_hash_bucket_size 64;
+        # server_name_in_redirect off;
+
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+        ##
+        # SSL Settings
+        ##
+
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2; # Dropping SSLv3, ref: POODLE
+        ssl_prefer_server_ciphers on;
+
+        ##
+        # Logging Settings
+        ##
+
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+# Enable gzip compression.
+  gzip on;
+
+  # Compression level (1-9).
+  # 5 is a perfect compromise between size and CPU usage, offering about
+  # 75% reduction for most ASCII files (almost identical to level 9).
+  gzip_comp_level    1;
+
+  # Don't compress anything that's already small and unlikely to shrink much
+  # if at all (the default is 20 bytes, which is bad as that usually leads to
+  # larger files after gzipping).
+  gzip_min_length    10240;
+
+  # Compress data even for clients that are connecting to us via proxies,
+  # identified by the "Via" header (required for CloudFront).
+  gzip_proxied       expired no-cache no-store private auth;
+
+  # Tell proxies to cache both the gzipped and regular version of a resource
+  # whenever the client's Accept-Encoding capabilities header varies;
+  # Avoids the issue where a non-gzip capable client (which is extremely rare
+  # today) would display gibberish if their proxy gave them the gzipped version.
+  gzip_vary          on;
+  gzip_disable    msie6;
+  # Compress all output labeled with one of the following MIME-types.
+  gzip_types
+    application/atom+xml
+    application/javascript
+    application/json
+    application/ld+json
+    application/manifest+json
+    application/rss+xml
+    application/vnd.geo+json
+    application/vnd.ms-fontobject
+    application/x-font-ttf
+    application/x-web-app-manifest+json
+    application/xhtml+xml
+    application/xml
+    font/opentype
+    image/bmp
+    image/svg+xml
+    image/x-icon
+    text/cache-manifest
+    text/css
+    text/plain
+    text/vcard
+    text/vnd.rim.location.xloc
+    text/vtt
+    text/x-component
+    text/x-cross-domain-policy;
+
+
+  include /etc/nginx/conf.d/*.conf;
+  include /etc/nginx/sites-enabled/*;
+
+
+
+server {
+    listen      *:8089;
+    server_name localhost;
+    root /mnt/log_store ;
+    error_log   /var/log/nginx/error.log;
+    access_log  /var/log/nginx/access.log;
+
+location / {
+        fancyindex on;
+        fancyindex_localtime on;
+	fancyindex_time_format "%d-%m-%Y %H:%M";
+        fancyindex_exact_size off;
+        fancyindex_default_sort date_desc;
+        fancyindex_header "/.etc/nginx/fancyindex_theme/header.html";
+        fancyindex_ignore "/.etc/nginx/fancyindex_theme";
+        fancyindex_name_length 255;
+}
+
+
+
+        }
+}
+
+
+nginx -t        (output should be without any ERROR)
+
+/etc/init.d/nginx restart
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
