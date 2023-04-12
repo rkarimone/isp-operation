@@ -104,7 +104,7 @@ vim /etc/sudoers
 root    ALL=(ALL:ALL) ALL
 _adblock    ALL=(root) NOPASSWD: /bin/systemctl restart unbound
 
-chown _adblock /usr/local/bin/unbound-adblock.sh -linux
+chown _adblock /usr/local/bin/unbound-adblock.sh
 sudo -u _adblock sh /usr/local/bin/unbound-adblock.sh -linux
 
 
