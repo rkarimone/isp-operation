@@ -389,19 +389,18 @@ location / {
       #  fancyindex_header "/.etc/nginx/fancyindex_theme/header.html";
       #  fancyindex_ignore "/.etc/nginx/fancyindex_theme";
         fancyindex_name_length 255;
+	}
 }
 
-
-
-  }
-
-
 ############### example ################################# close
+
+
+
 
 ln -s /etc/nginx/sites-available/apcl.conf /etc/nginx/sites-enabled/
 nginx -t
 
-htpasswd -c /etc/nginx/.htpasswd-apcl logviewer
+htpasswd -c /etc/nginx/.htpasswd-apcl logviewer		// set password
 nginx -t
 nginx -s reload
 /etc/init.d/nginx restart
