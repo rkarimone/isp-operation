@@ -410,7 +410,7 @@ nginx -s reload
 
 
 
-
+# https://www.cyberciti.biz/faq/nginx-password-protect-directory-with-nginx-htpasswd-authentication/
 
 
 
