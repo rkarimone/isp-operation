@@ -363,6 +363,50 @@ nginx -t        (output should be without any ERROR)
 
 
 
+############ AUTH BASIC ### PASSWORD PROTECT URL ############
+
+apt install nginx nginx-extras apache2-utils
+cd /etc/nnginx/sites-available/
+
+vim apcl.conf
+
+############### example ################################# open
+server {
+    listen      *:8088;
+    server_name localhost;
+    root /data/apcl ;
+    error_log   /var/log/nginx/error.log;
+    access_log  /var/log/nginx/access.log;
+
+location / {
+        auth_basic "Login Authentication";
+        auth_basic_user_file /etc/nginx/.htpasswd-apcl;
+        fancyindex on;
+        fancyindex_localtime on;
+        fancyindex_time_format "%d-%m-%Y %H:%M";
+        fancyindex_exact_size off;
+        fancyindex_default_sort date_desc;
+      #  fancyindex_header "/.etc/nginx/fancyindex_theme/header.html";
+      #  fancyindex_ignore "/.etc/nginx/fancyindex_theme";
+        fancyindex_name_length 255;
+}
+
+
+
+  }
+
+
+############### example ################################# close
+
+ln -s /etc/nginx/sites-available/apcl.conf /etc/nginx/sites-enabled/
+nginx -t
+
+htpasswd -c /etc/nginx/.htpasswd-apcl logviewer
+nginx -t
+nginx -s reload
+/etc/init.d/nginx restart
+
+
 
 
 
