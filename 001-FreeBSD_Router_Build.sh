@@ -1,3 +1,4 @@
+#!/bin/bash
 
 ## Install FreeBSD 13.1 - 64bit 
 
@@ -11,6 +12,29 @@ pkg install  vim iftop htop mtr iperf3 mc nano bwm-ng
 
 
 portsnap fetch extract update
+
+
+
+
+###########################################################
+### COMPILE KERNEL ####
+###########################################################
+
+cd /usr/src/sys/amd64/conf/
+
+
+
+
+
+
+
+###########################################################
+### COMPILE KERNEL ####
+###########################################################
+
+
+
+
 
 
 cat /etc/sysctl.conf
