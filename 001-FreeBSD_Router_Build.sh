@@ -13,8 +13,15 @@ pkg install  vim iftop htop mtr iperf3 mc nano bwm-ng
 
 portsnap fetch extract update
 
+freebsd-update fetch
+freebsd-update install
 
+shutdown -r now
 
+freebsd-update install
+shutdown -r now
+
+freebsd-version
 
 ###########################################################
 ### COMPILE KERNEL ####
@@ -22,15 +29,84 @@ portsnap fetch extract update
 
 cd /usr/src/sys/amd64/conf/
 
+cp GENERIC mycustom-kernel-x86-64
+vim mycustom-kernel-x86-64
+cpu		HAMMER
+ident		mycustom-kernel-x86-64
+
+
+# CPU frequency control
+device          cpufreq
+
+makeoptions     WITH_EXTRA_TCP_STACKS=1
+options         RATELIMIT
+options         TCPHPTS
+
+
+options         IPFIREWALL
+options         IPFIREWALL_VERBOSE
+options         IPFIREWALL_VERBOSE_LIMIT
+options         IPFIREWALL_DEFAULT_TO_ACCEPT
+options         IPFIREWALL_NAT
+options         LIBALIAS
+options         DUMMYNET
+options         IPDIVERT
+options         HZ=1000
+
+options         VIMAGE
+options         NULLFS
+
+options         NETGRAPH
+options         NETGRAPH_ASYNC
+options         NETGRAPH_BPF
+options         NETGRAPH_ECHO
+options         NETGRAPH_ETHER
+options         NETGRAPH_HOLE
+options         NETGRAPH_IFACE
+options         NETGRAPH_KSOCKET
+options         NETGRAPH_L2TP
+options         NETGRAPH_LMI
+options         NETGRAPH_MPPC_ENCRYPTION
+options         NETGRAPH_ONE2MANY
+options         NETGRAPH_PPP
+options         NETGRAPH_PPTPGRE
+options         NETGRAPH_RFC1490
+options         NETGRAPH_SOCKET
+options         NETGRAPH_TEE
+options         NETGRAPH_TTY
+options         NETGRAPH_UI
+options         NETGRAPH_VJC
+options         NETGRAPH_EIFACE
+options         NETGRAPH_SOCKET
+
+
+options         TCP_SIGNATURE
+options         MROUTING
+options         ROUTETABLES=16
+options         KDB_UNATTENDED
 
 
 
+make -j 16 KERNCONF=mycustom-kernel-x86-64 buildkernel
+make installkernel KERNCONF=mycustom-kernel-x86-64
 
+reboot
 
 
 ###########################################################
 ### COMPILE KERNEL ####
 ###########################################################
+
+kldload /boot/kernel/tcp_bbr.ko
+sysctl net.inet.tcp.functions_available
+sysctl net.inet.tcp.functions_default=bbr
+sysctl net.inet.tcp.functions_available
+
+
+
+
+
+
 
 
 
