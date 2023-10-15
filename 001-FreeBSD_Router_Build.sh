@@ -471,6 +471,36 @@ vtysh
 
 
 
+
+root@:~ # cat ipfw3_sample.sh
+#!/bin/sh
+kldload ipfw3
+kldload ipfw3_nat
+kldload ipfw3_layer4
+#kldload ipfw3_dummynet
+
+ipfw3 flush
+
+ipfw3 add 1 allow all
+
+ipfw3 nat 1 config ip 103.144.200.45
+ipfw3 add 2 nat 1 all via em0
+
+#ipfw3 add 2 check-state
+#ipfw3 add 3 allow all established
+#ipfw3 add 4 allow all out via em0 keep-state
+#ipfw3 add 100 allow all
+#ipfw3 add deny all
+
+
+
+
+
+
+
+
+
+
 ## download source kernel
 cd /usr/
 make src-create-shallow
