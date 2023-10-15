@@ -470,7 +470,39 @@ chown -R frr:frr frr
 vtysh
 
 
+
+## download source kernel
+cd /usr/
+make src-create-shallow
+
    
-   
+Change to the /usr/src directory.
+
+cd /usr/src
+
+#Compile the kernel.
+cp X86_64_GENERIC X86_64_ROUTER
+vim X86_64_ROUTER
+
+###IFPW ####
+options         IPFIREWALL
+options         IPFIREWALL_VERBOSE
+options         IPFIREWALL_DEFAULT_TO_ACCEPT
+options         IPFIREWALL_NAT
+options         LIBALIAS
+options         DUMMYNET
+options         IPDIVERT
+options         HZ=1000
+
+
+
+make -j 3 buildkernel KERNCONF=X86_64_ROUTER
+
+#Install the new kernel.
+make installkernel KERNCONF=X86_64_ROUTER
+
+
+
+
 
 
