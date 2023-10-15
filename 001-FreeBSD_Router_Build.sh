@@ -347,3 +347,30 @@ pppoe_server1:
         set radius timeout 10
         set auth enable radius-auth
         set radius me 43.230.123.57
+
+
+
+
+################## DragonFLYBSD #########
+
+
+
+/usr/local/etc/pkg/repos/df-latest.conf 
+
+AUTO: {
+    url             : https://pkg.dragonflybsd.org/pkg/${ABI}/LATEST
+    mirror_type     : HTTP
+    enabled         : yes
+}
+
+Avalon: {
+    [...]
+    enabled         : no
+}
+
+
+
+
+
+
+
