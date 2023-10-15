@@ -371,6 +371,106 @@ Avalon: {
 
 
 
+########### DRAGON FLY BSD ### LAB WORKS #######
 
+ifconfig 10X.14Y.20Z.45/28 up
+route add default 10X.14Y.20Z.33
+
+echo "nameseerver 8.8.8.8" > /etc/resolv.conf
+
+
+cd /usr/local/etc/pkg/repos/
+cp df-latest.conf.sample df-latest.conf
+echo "" > df-latest.conf
+
+ee df-latest.conf
+
+root@:~ # cat /usr/local/etc/pkg/repos/df-latest.conf
+# If multiple repositories are enabled, they are ordered by their priorities
+# and then listing orders.
+
+# United States, California
+Avalon: {
+        url             : https://mirror-master.dragonflybsd.org/dports/${ABI}/LATEST,
+        mirror_type     : NONE,
+        signature_type  : NONE,
+        pubkey          : NONE,
+        fingerprints    : /usr/share/fingerprints,
+        priority        : 0,
+        enabled         : no
+}
+
+# Asia
+#
+
+# South Korea
+# Korea FreeBSD Users Group
+KFBUG: {
+        url             : https://ftp.kr.freebsd.org/pub/dragonflybsd/dports/${ABI}/LATEST,
+        enabled         : yes
+}
+ 
+
+pkg update
+pkg upgrade
+
+pkg install vim mtr nano htop bwm-ng iftop wget net-snmp frr7
+rehash
+
+
+
+root@:~ # cat /etc/rc.conf
+# Basic rc.conf, adjust according to your needs
+#
+nfs_reserved_port_only="YES"
+sshd_enable="YES"
+nfs_client_enable="YES"
+rpc_umntall_enable="NO"
+dumpdev="/dev/vbd0s1b"  # via installer configuration
+
+
+ifconfig_em0="inet 10X.14Y.20Z.45/28 up"
+defaultrouter="10X.14Y.20Z.33"
+
+
+frr_enable="yes"
+frr_daemons="zebra staticd bgpd"
+
+
+tzsetup
+
+#cd /usr/
+#make dports-create-shallow
+
+
+
+pkg install frr7
+vim /etc/sysctl.conf
+
+frr_enable="yes"
+frr_daemons="zebra staticd bgpd"
+
+
+sysctl kern.ipc.maxsockbuf=16777216
+
+vim /etc/sysctl.conf
+kern.ipc.maxsockbuf=16777216
+
+
+rehash
+cd /usr/local/etc/frr
+cp zebra.conf.sample zebra.conf
+cp bgpd.conf.sample bgpd.conf
+cp vtysh.conf.sample vtysh.conf
+cp staticd.conf.sample staticd.conf
+chown -R frr:frr *
+cd ..
+chown -R frr:frr frr
+/usr/local/etc/rc.d/frr restart
+vtysh
+
+
+   
+   
 
 
