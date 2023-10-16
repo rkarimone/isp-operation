@@ -496,9 +496,22 @@ ipfw3 add 2 nat 1 all via em0
 
 
 
+### https://www.dragonflybsd.org/docs/ipfw3/
+sysctl net.filters_default_to_accept=1
+echo "net.filters_default_to_accept=1" >> /etc/sysctl.conf
+
+kldload ipfw3 ipfw3_nat ipfw3_layer4 dummynet
 
 
+### rc.conf
+powerd_enable="NO"
+firewall_enable="YES"
+firewall_script="/etc/rc.firewall"
+firewall_type="OPEN"
 
+gateway_enable="YES"
+ipfw3_enable="YES"
+ipfw3_modules="ipfw3 ipfw3_nat ipfw3_layer4 dummynet"
 
 
 ## download source kernel
