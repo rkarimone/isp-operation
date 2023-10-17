@@ -550,3 +550,8 @@ make installkernel KERNCONF=X86_64_ROUTER
 
 
 
+
+
+#################################
+pciconf -lv | grep -A1 -B3 network
+
