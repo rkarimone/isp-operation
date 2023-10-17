@@ -548,7 +548,9 @@ make installkernel KERNCONF=X86_64_ROUTER
 
 
 /usr/obj/usr/src/amd64.amd64/sys/XROUTER/modules/usr/src/sys/modules/ixl
+/usr/obj/usr/src/amd64.amd64/sys/XROUTER/modules/usr/src/sys/modules/ix
 
+define RSS 1
 
 
 
@@ -574,5 +576,11 @@ https://forums.freebsd.org/threads/building-driver-module-in-a-rss-enabled-custo
 # cat /usr/obj/root/freebsd_12/amd64.amd64/sys/GENERIC/opt_rss.h
 #define RSS 1 << Looks, this opt_rss.h is generic for the particular installation>>
 
+# File
+find / -type f -name "file name"
+# Directory
+find / -type d -name "directory name"
 
+
+/usr/libexec/locate.updatedb
 
