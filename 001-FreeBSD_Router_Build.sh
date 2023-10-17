@@ -547,11 +547,32 @@ make installkernel KERNCONF=X86_64_ROUTER
 
 
 
-
+/usr/obj/usr/src/amd64.amd64/sys/XROUTER/modules/usr/src/sys/modules/ixl
 
 
 
 
 #################################
 pciconf -lv | grep -A1 -B3 network
+
+# https://www.freshports.org/net/intel-ix-kmod/
+pkg install net/intel-ix-kmod
+pkg install intel-ix-kmod
+
+if_ix_updated_load="YES"
+
+to your /boot/loader.conf 
+
+sysctl net.inet.rss.enabled
+sysctl -a | grep -i 'isr.bindthreads\|isr.maxthreads\|inet.rss.enabled\|inet.rss.bits'
+kldstat
+
+
+   
+
+https://forums.freebsd.org/threads/building-driver-module-in-a-rss-enabled-custom-kernel-doesnt-seems-to-enable-rss.74507/
+# cat /usr/obj/root/freebsd_12/amd64.amd64/sys/GENERIC/opt_rss.h
+#define RSS 1 << Looks, this opt_rss.h is generic for the particular installation>>
+
+
 
