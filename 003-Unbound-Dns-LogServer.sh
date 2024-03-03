@@ -8,7 +8,7 @@ apt install unbound wget curl vim sudo rsyslog -y
 
 02- Fix System Default Language
 
-apt -y install locales-all
+apt -y install locales locales-all
 localectl set-locale LANG=en_US.UTF-8 LANGUAGE="en_US:en"
 export LANG=en_US.UTF-8
 
