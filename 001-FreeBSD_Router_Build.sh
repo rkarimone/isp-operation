@@ -584,3 +584,8 @@ find / -type d -name "directory name"
 
 /usr/libexec/locate.updatedb
 
+
+ifconfig_vtnet2="DHCP -lro -tso -rxcsum -txcsum"
+ifconfig_vtnet1="inet 192.168.1.254 netmask 255.255.255.0 -lro -tso -rxcsum -txcsum
+
+
