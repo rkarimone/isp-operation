@@ -183,3 +183,29 @@ updatedb
     ErrorLog ${APACHE_LOG_DIR}/error.log
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
+
+
+# https://www.ma-no.org/en/networking/how-to-reset-ispconfig-3-admin-password
+
+cat /usr/local/ispconfig/server/lib/mysql_clientdb.conf
+$clientdb_host = ‘localhost’;
+$clientdb_user = ‘root’;
+$clientdb_password = ‘VerySecurePassword’;
+
+mysql_clientdb.conf
+mysql -h localhost -p dbispconfig
+
+UPDATE sys_user SET passwort = md5('YourNewPassword') WHERE username = 'admin';
+FLUSH PRIVILEGES;
+quit;
+
+
+
+
+
+
+
+
+
+
+
