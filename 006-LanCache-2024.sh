@@ -151,3 +151,83 @@ root@lancache1:~# cat /opt/lc-install.sh
   149  sudo nslookup steam.cache.lancache.net
   150  cd
   151  history > /opt/lc-install.sh
+
+
+
+########### ENV FILE ###########
+
+vim .env
+
+## See the "Settings" section in README.md for more details
+USE_GENERIC_CACHE=true
+LANCACHE_IP=192.168.105.27
+DNS_BIND_IP=192.168.105.27
+UPSTREAM_DNS=172.16.166.2
+CACHE_ROOT=./lcdata
+CACHE_DISK_SIZE=250g
+CACHE_INDEX_SIZE=500m
+CACHE_MAX_AGE=60d
+TZ=Asia/Dhaka
+
+
+vim docker-compose.yml
+
+version: '2'
+services:
+  dns:
+    image: lancachenet/lancache-dns:latest
+    env_file: .env
+    restart: always
+    ports:
+      - ${DNS_BIND_IP}:53:53/udp
+      - ${DNS_BIND_IP}:53:53/tcp
+
+  monolithic:
+    image: lancachenet/monolithic:latest
+    env_file: .env
+    restart: always
+    ports:
+      - 80:80/tcp
+      - 443:443/tcp
+    volumes:
+      - ${CACHE_ROOT}/cache:/data/cache
+      - ${CACHE_ROOT}/logs:/data/logs
+
+
+
+docker exec -it lancache-dns-1 bash
+vim /etc/bind/named.conf.options
+
+
+#
+options {
+        directory "/var/cache/bind";
+        dnssec-validation no;
+        auth-nxdomain no;    # conform to RFC1035
+        allow-recursion { any; };
+        allow-query { any; };
+        allow-query-cache { any; };
+        listen-on { any; };
+        listen-on-v6 { any; };
+        max-cache-ttl 0;
+        max-ncache-ttl 0;
+        forward only;
+
+        recursive-clients 3000;
+        tcp-clients 300;
+        # Permit RFC1918 PTR lookups to be recursed upstream
+        empty-zones-enable no;
+        response-policy { zone "rpz"; };
+        rrset-order { order cyclic; };
+        forwarders { 172.16.166.2; };
+};
+
+
+
+
+
+
+
+
+
+  
