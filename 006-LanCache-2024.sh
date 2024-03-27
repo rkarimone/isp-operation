@@ -225,9 +225,27 @@ options {
 
 
 
+# https://cylab.be/blog/209/network-monitoring-log-dns-queries-with-bind
+
+/etc/bind/named.conf.options:
 
 
+logging {
+        channel default_log {
+                file "/var/log/bind/default.log";
+                print-time yes;
+                print-category yes;
+                print-severity yes;
+                severity info;
+        };
+
+        category default { default_log; };
+        category queries { default_log; };
+};
 
 
+sudo service bind9 restart
+
+https://nsrc.org/activities/agendas/en/dnssec-3-days/dns/materials/labs/en/dns-bind-logging.html
 
   
