@@ -413,6 +413,36 @@ nginx -s reload
 # https://www.cyberciti.biz/faq/nginx-password-protect-directory-with-nginx-htpasswd-authentication/
 
 
+### IP-BLACKLIST ####
+
+https://opendbl.net/lists/etknown.list,
+https://opendbl.net/lists/tor-exit.list,
+https://opendbl.net/lists/bruteforce.list,
+https://opendbl.net/lists/blocklistde-all.list,
+https://opendbl.net/lists/talos.list,
+https://opendbl.net/lists/dshield.list,
+https://opendbl.net/lists/sslblock.list,
+https://opendbl.net/lists/ipsum.list
+
+
+
+https://feodotracker.abuse.ch/downloads/ipblocklist_recommended.txt,
+https://feodotracker.abuse.ch/downloads/ipblocklist_aggressive.txt,
+https://sslbl.abuse.ch/blacklist/sslipblacklist.txt,
+https://cinsarmy.com/list/ci-badguys.txt,
+https://rules.emergingthreats.net/fwrules/emerging-Block-IPs.txt,
+https://rules.emergingthreats.net/blockrules/compromised-ips.txt,
+https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/cybercrime.ipset,
+https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level2.netset,
+https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level3.netset,
+https://lists.blocklist.de/lists/all.txt,
+https://isc.sans.edu/block.txt,
+https://www.spamhaus.org/drop/drop.txt,
+https://www.spamhaus.org/drop/edrop.txt,
+https://talosintelligence.com/documents/ip-blacklist,
+http://danger.rulez.sk/projects/bruteforceblocker/blist.php,
+# https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level1.netset
+
 
 
 
