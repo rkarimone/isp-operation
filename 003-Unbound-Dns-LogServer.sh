@@ -444,6 +444,23 @@ http://danger.rulez.sk/projects/bruteforceblocker/blist.php,
 # https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level1.netset
 
 
+### dnsbl-source-list ####
+
+https://raw.githubusercontent.com/rkarimone/isp-operation/main/cbl_test.txt
+https://threatfox.abuse.ch/downloads/hostfile/
+http://sbc.io/hosts/alternates/fakenews-gambling-porn/hosts
+https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt
+https://raw.githubusercontent.com/chadmayfield/pihole-blocklists/master/lists/pi_blocklist_porn_top1m.list
+https://raw.githubusercontent.com/chadmayfield/my-pihole-blocklists/master/lists/pi_blocklist_porn_all.list
+https://blocklistproject.github.io/Lists/alt-version/torrent-nl.txt
+https://blocklistproject.github.io/Lists/alt-version/tiktok-nl.txt
+https://blocklistproject.github.io/Lists/alt-version/scam-nl.txt
+https://blocklistproject.github.io/Lists/alt-version/ransomware-nl.txt
+https://blocklistproject.github.io/Lists/alt-version/phishing-nl.txt
+https://blocklistproject.github.io/Lists/alt-version/malware-nl.txt
+https://blocklistproject.github.io/Lists/alt-version/fraud-nl.txt
+https://blocklistproject.github.io/Lists/alt-version/abuse-nl.txt
+https://big.oisd.nl/domainswild
 
 
 
