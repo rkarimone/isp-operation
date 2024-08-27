@@ -1,4 +1,2 @@
-www.torrentbd.com
-torrentbd.com
-www.torrentbd.net
-torrentbd.net
+*.torrentbd.com
+*.torrentbd.net
