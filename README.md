@@ -44,3 +44,22 @@ aggregator-group 1 mode lacp
 !
 !
 ```
+
+# FREE-RADIUS-NAS AUTO RESTART (UBUNTU)
+
+```
+sudo apt update && apt install incron -y
+echo "root" > /etc/incron.allow
+
+sudo vim /opt/NAS_RESTART
+#!/bin/bash
+sleep 1
+systemctl restart freeradius
+sleep 3
+systemctl restart incron
+
+chmod +x /opt/NAS_RESTART
+
+sudo incrontab -e
+/var/lib/mysql/radius/nas.ibd IN_MODIFY /opt/NAS_RESTART
+```
