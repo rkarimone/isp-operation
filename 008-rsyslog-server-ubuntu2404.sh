@@ -176,6 +176,9 @@ vim /etc/rsyslog.conf // add the following line
 mail.* @@172.16.198.1:514             // [ to send mail log only] //   
 *.* @@172.16.198.1:514                // [ to send all log only] //
 
+systemctl enable rsyslog
+systemctl restart rsyslog
+
 #########################################################################################################
 ###### Client End Configuration | Ubuntu 20.4-to-24.04 | End
 #########################################################################################################
