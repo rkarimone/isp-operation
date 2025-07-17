@@ -161,8 +161,21 @@ ip firewall mangle add action=log chain=prerouting connection-state=established 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 /ip firewall filter add action=log chain=forward connection-state=new dst-port=80,443 protocol=tcp out-interface=vlan3520-IPT
-/system logging action add name=LOG252 remote=157.15.61.151 target=remote src-address=103.138.250.73
+/system logging action add name=LOG252 remote=103.xxx.yy.237 target=remote src-address=103.yy.vv.73
 /system logging add action=LOG252 topics=firewall
-/user add name=logapi group=read password=GoodPw@20xx
+/user add name=logapi group=read password=SecretPassword
 
 
+#########################################################################################################
+###### Client End Configuration | Ubuntu 20.4-to-24.04 
+#########################################################################################################
+
+apt install rsyslog
+vim /etc/rsyslog.conf // add the following line
+
+mail.* @@172.16.198.1:514             // [ to send mail log only] //   
+*.* @@172.16.198.1:514                // [ to send all log only] //
+
+#########################################################################################################
+###### Client End Configuration | Ubuntu 20.4-to-24.04 | End
+#########################################################################################################
