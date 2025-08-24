@@ -90,11 +90,10 @@ TEMP_DIR="/tmp/netsets"
 LOG_FILE="/var/log/netset-manager.log"
 
 # Global list of all managed ipsets
-ALL_NETSETS=("firehol_level1" "firehol_level2" "firehol_level3" "firehol_level4" "spamhaus_drop" "ci_badguys" "et_bl1" "et_bl2" "bl_de1" "bl_agr" "crowdsec_bl" "whitelist_networks")
+ALL_NETSETS=("firehol_level1" "firehol_level2" "firehol_level3" "spamhaus_drop" "ci_badguys" "et_bl1" "et_bl2" "bl_de1" "bl_agr" "crowdsec_bl" "whitelist_networks" "manual_blacklist")
 
 # GeoIP Configuration
 BLOCKED_COUNTRIES="BR,RU,CN,PL,IR"
-GEOIP_INPUT_ETHER="ens18"
 
 # Logging function
 log_message() {
@@ -181,15 +180,33 @@ create_whitelist() {
     log_message "Created whitelist with $count entries"
 }
 
+# Function to create and initialize manual blacklist
+create_manual_blacklist() {
+    local name="manual_blacklist"
+    log_message "Creating manual blacklist: $name"
+    
+    # Create the ipset for manual blacklist
+    ipset create "$name" hash:net hashsize 1024 maxelem 50000 -exist
+    
+    # Restore existing manual blacklist if saved file exists
+    if [[ -f "$IPSET_DIR/$name.save" ]]; then
+        ipset restore < "$IPSET_DIR/$name.save" 2>/dev/null
+        local count=$(ipset list "$name" | grep -c '^[0-9]')
+        log_message "Restored manual blacklist with $count entries"
+    else
+        log_message "Manual blacklist initialized (empty)"
+    fi
+}
+
 # Function to setup GeoIP country blocking
 setup_geoip_rules() {
     log_message "Setting up GeoIP country blocking"
     
     # Remove existing GeoIP rule if present
-    iptables -D INPUT -i "$GEOIP_INPUT_ETHER" -m geoip --src-cc "$BLOCKED_COUNTRIES" -j DROP 2>/dev/null || true
+    iptables -D INPUT -i ens18 -m geoip --src-cc "$BLOCKED_COUNTRIES" -j DROP 2>/dev/null || true
     
     # Add GeoIP blocking rule (insert at beginning for high priority)
-    iptables -I INPUT -i "$GEOIP_INPUT_ETHER" -m geoip --src-cc "$BLOCKED_COUNTRIES" -j DROP
+    iptables -I INPUT -i ens18 -m geoip --src-cc "$BLOCKED_COUNTRIES" -j DROP
     
     log_message "Applied GeoIP blocking for countries: $BLOCKED_COUNTRIES"
 }
@@ -214,8 +231,14 @@ apply_all_rules() {
     # 2. Apply GeoIP country blocking (after whitelist)
     setup_geoip_rules
     
-    # 3. Apply blacklist rules (lower priority)
-    local blacklists=("firehol_level1" "firehol_level2" "firehol_level3" "firehol_level4" "spamhaus_drop" "ci_badguys" "et_bl1" "et_bl2" "bl_de1" "bl_agr" "crowdsec_bl")
+    # 3. Apply manual blacklist rules (high priority, after whitelist and GeoIP)
+    if ipset list "manual_blacklist" >/dev/null 2>&1; then
+        iptables -A INPUT -m set --match-set "manual_blacklist" src -j DROP
+        log_message "Applied manual blacklist rules"
+    fi
+    
+    # 4. Apply blacklist rules (lower priority)
+    local blacklists=("firehol_level1" "firehol_level2" "firehol_level3" "spamhaus_drop" "ci_badguys" "et_bl1" "et_bl2" "bl_de1" "bl_agr" "crowdsec_bl")
     
     for blacklist in "${blacklists[@]}"; do
         if ipset list "$blacklist" >/dev/null 2>&1; then
@@ -300,6 +323,136 @@ show_whitelist() {
 }
 
 # -----------------------------------------------------------------------------
+## Manual IP Blocking Functions
+# -----------------------------------------------------------------------------
+
+# Function to add IP/subnet to manual blacklist
+add_manual_block() {
+    local network="$1"
+    
+    if [[ -z "$network" ]]; then
+        echo "Usage: $0 block-ip <network>"
+        echo "Example: $0 block-ip 192.168.1.100"
+        echo "Example: $0 block-ip 203.0.113.0/24"
+        exit 1
+    fi
+    
+    # Validate network format
+    if [[ ! "$network" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+(/[0-9]+)?$ ]]; then
+        log_message "Invalid network format: $network"
+        echo "Error: Invalid network format: $network"
+        exit 1
+    fi
+    
+    # Create manual blacklist if it doesn't exist
+    ipset create "manual_blacklist" hash:net hashsize 1024 maxelem 50000 -exist
+    
+    # Add network to manual blacklist
+    if ipset add "manual_blacklist" "$network" 2>/dev/null; then
+        # Save updated blacklist
+        ipset save "manual_blacklist" > "$IPSET_DIR/manual_blacklist.save"
+        log_message "Added $network to manual blacklist"
+        echo "Successfully blocked $network"
+        
+        # Apply rules to make the block effective immediately
+        apply_all_rules
+    else
+        log_message "Failed to add $network to manual blacklist (may already exist)"
+        echo "Network $network already exists in manual blacklist or invalid format"
+    fi
+}
+
+# Function to remove IP/subnet from manual blacklist
+remove_manual_block() {
+    local network="$1"
+    
+    if [[ -z "$network" ]]; then
+        echo "Usage: $0 unblock-ip <network>"
+        echo "Example: $0 unblock-ip 192.168.1.100"
+        exit 1
+    fi
+    
+    if ipset test "manual_blacklist" "$network" 2>/dev/null; then
+        ipset del "manual_blacklist" "$network"
+        ipset save "manual_blacklist" > "$IPSET_DIR/manual_blacklist.save"
+        log_message "Removed $network from manual blacklist"
+        echo "Successfully unblocked $network"
+        
+        # Apply rules to make the unblock effective immediately
+        apply_all_rules
+    else
+        log_message "Network $network not found in manual blacklist"
+        echo "Network $network not found in manual blacklist"
+    fi
+}
+
+# Function to show manual blacklist
+show_manual_blacklist() {
+    echo "Current Manual Blacklist Networks:"
+    if ipset list "manual_blacklist" >/dev/null 2>&1; then
+        local entries=$(ipset list "manual_blacklist" | grep -E '^[0-9]+\.' | sort -V)
+        if [[ -n "$entries" ]]; then
+            echo "$entries"
+            echo
+            echo "Total blocked IPs/networks: $(echo "$entries" | wc -l)"
+        else
+            echo "No manual blocks configured"
+        fi
+    else
+        echo "No manual blacklist configured"
+    fi
+}
+
+# Function to check if an IP is blocked
+check_ip_status() {
+    local ip="$1"
+    
+    if [[ -z "$ip" ]]; then
+        echo "Usage: $0 check-ip <ip>"
+        echo "Example: $0 check-ip 192.168.1.100"
+        exit 1
+    fi
+    
+    # Validate IP format
+    if [[ ! "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "Error: Invalid IP format: $ip"
+        exit 1
+    fi
+    
+    echo "Checking status for IP: $ip"
+    echo "================================"
+    
+    # Check whitelist
+    if ipset test "whitelist_networks" "$ip" 2>/dev/null; then
+        echo "✓ WHITELISTED - This IP is allowed (bypasses all blocks)"
+        return 0
+    fi
+    
+    # Check manual blacklist
+    if ipset test "manual_blacklist" "$ip" 2>/dev/null; then
+        echo "✗ MANUALLY BLOCKED - This IP is in manual blacklist"
+        return 0
+    fi
+    
+    # Check other blacklists
+    local blocked_in=""
+    local blacklists=("firehol_level1" "firehol_level2" "firehol_level3" "spamhaus_drop" "ci_badguys" "et_bl1" "et_bl2" "bl_de1" "bl_agr" "crowdsec_bl")
+    
+    for blacklist in "${blacklists[@]}"; do
+        if ipset list "$blacklist" >/dev/null 2>&1 && ipset test "$blacklist" "$ip" 2>/dev/null; then
+            blocked_in="$blocked_in $blacklist"
+        fi
+    done
+    
+    if [[ -n "$blocked_in" ]]; then
+        echo "✗ BLOCKED - Found in blacklists:$blocked_in"
+    else
+        echo "○ NOT BLOCKED - IP not found in any blacklists"
+        echo "Note: May still be blocked by GeoIP rules for countries: $BLOCKED_COUNTRIES"
+    fi
+}
+
+# -----------------------------------------------------------------------------
 ## 2. Command Handlers
 # -----------------------------------------------------------------------------
 
@@ -310,11 +463,13 @@ handle_update() {
     # Create and populate whitelist first
     create_whitelist
     
+    # Create and initialize manual blacklist
+    create_manual_blacklist
+    
     # Update blacklists
     create_netset "firehol_level1" "https://iplists.firehol.org/files/firehol_level1.netset" "FireHOL Level1"
     create_netset "firehol_level2" "https://iplists.firehol.org/files/firehol_level2.netset" "FireHOL Level2"
     create_netset "firehol_level3" "https://iplists.firehol.org/files/firehol_level3.netset" "FireHOL Level3"
-    create_netset "firehol_level4" "https://iplists.firehol.org/files/firehol_level4.netset" "FireHOL Level4"    
     create_netset "spamhaus_drop" "https://www.spamhaus.org/drop/drop.txt" "Spamhaus DROP"
     create_netset "ci_badguys" "https://cinsarmy.com/list/ci-badguys.txt" "CI-Badguys"
     create_netset "et_bl1" "https://rules.emergingthreats.net/fwrules/emerging-Block-IPs.txt" "ET BLOCK1"
@@ -368,6 +523,18 @@ case "$1" in
     "show-whitelist")
         show_whitelist
         ;;
+    "block-ip")
+        add_manual_block "$2"
+        ;;
+    "unblock-ip")
+        remove_manual_block "$2"
+        ;;
+    "show-blocked")
+        show_manual_blacklist
+        ;;
+    "check-ip")
+        check_ip_status "$2"
+        ;;
     "status")
         echo "=== Netset Firewall Status ==="
         echo
@@ -383,9 +550,11 @@ case "$1" in
         echo
         echo "Configuration:"
         echo "Blocked Countries: $BLOCKED_COUNTRIES"
-        echo "Blacklist Sources: ${#ALL_NETSETS[@]} ipsets (including CrowdSec)"
+        echo "Blacklist Sources: ${#ALL_NETSETS[@]} ipsets (including CrowdSec + Manual)"
         echo
         show_whitelist
+        echo
+        show_manual_blacklist
         ;;
     "reset-policy")
         log_message "Resetting iptables to default ACCEPT policy"
@@ -400,7 +569,7 @@ case "$1" in
         save_rules
         ;;
     *)
-        echo "Usage: $0 {update|reload|restore|add-whitelist|remove-whitelist|show-whitelist|status|reset-policy|save}"
+        echo "Usage: $0 {update|reload|restore|add-whitelist|remove-whitelist|show-whitelist|block-ip|unblock-ip|show-blocked|check-ip|status|reset-policy|save}"
         echo
         echo "Commands:"
         echo "  update              - Download and apply all blacklists with GeoIP blocking"
@@ -409,22 +578,32 @@ case "$1" in
         echo "  add-whitelist <net> - Add network to whitelist (bypasses all blocks)"
         echo "  remove-whitelist    - Remove network from whitelist"
         echo "  show-whitelist      - Display current whitelist"
+        echo "  block-ip <ip/net>   - Manually block specific IP or network"
+        echo "  unblock-ip <ip/net> - Remove IP/network from manual blacklist"
+        echo "  show-blocked        - Display manually blocked IPs/networks"
+        echo "  check-ip <ip>       - Check if an IP is blocked and where"
         echo "  status              - Show current ipsets, iptables rules, and config"
         echo "  reset-policy        - Reset to allow-all policy"
         echo "  save                - Manually save current rules to disk"
         echo
         echo "Configuration:"
         echo "  Blocked Countries: $BLOCKED_COUNTRIES"
-        echo "  Blacklist Sources: FireHOL (L1-L3), Spamhaus, CI-Badguys, ET, Blocklist.de, BL-Aggr, CrowdSec"
+        echo "  Blacklist Sources: FireHOL (L1-L3), Spamhaus, CI-Badguys, ET, Blocklist.de, BL-Aggr, CrowdSec, Manual"
         echo
         echo "Rule Priority Order:"
         echo "  1. Whitelist networks (highest priority - always allowed)"
         echo "  2. GeoIP country blocking (blocks: $BLOCKED_COUNTRIES)"
-        echo "  3. IP-based blacklists (10 threat intelligence sources)"
+        echo "  3. Manual IP blacklist (user-defined blocks)"
+        echo "  4. Automated IP blacklists (10 threat intelligence sources)"
         echo
         echo "Examples:"
         echo "  $0 update                     # Full update with all protections"
         echo "  $0 add-whitelist 203.0.113.5 # Allow specific trusted IP"
+        echo "  $0 block-ip 192.168.1.100    # Block specific IP manually"
+        echo "  $0 block-ip 10.0.0.0/8       # Block entire network"
+        echo "  $0 unblock-ip 192.168.1.100  # Remove IP from manual blacklist"
+        echo "  $0 check-ip 8.8.8.8          # Check if IP is blocked"
+        echo "  $0 show-blocked               # List all manually blocked IPs"
         echo "  $0 status                     # Check current configuration"
         exit 1
         ;;
