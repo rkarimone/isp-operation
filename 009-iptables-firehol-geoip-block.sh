@@ -1,7 +1,7 @@
 
 ||*NOTE*||  Remove any previous script firewall and fail2ban like software if already installed ||*NOTE*||
 ||*NOTE*||  This script will not work inside any Container Environment ||*NOTE*||
-
+||*NOTE*||  Verified On Debian 12 Or Ubuntu 22.04/24.04 ||*NOTE*||
 
 // Install iptables GeoIP addons or plugins //
 
@@ -81,7 +81,6 @@ sudo vim /usr/local/bin/manage-netsets.sh
 
 
 
-
 #!/bin/bash
 
 # Optimized Netset management script with GeoIP country blocking
@@ -90,7 +89,7 @@ TEMP_DIR="/tmp/netsets"
 LOG_FILE="/var/log/netset-manager.log"
 
 # Global list of all managed ipsets
-ALL_NETSETS=("firehol_level1" "firehol_level2" "firehol_level3" "spamhaus_drop" "ci_badguys" "et_bl1" "et_bl2" "bl_de1" "bl_agr" "crowdsec_bl" "whitelist_networks" "manual_blacklist")
+ALL_NETSETS=("firehol_level1" "firehol_level2" "firehol_level3" "firehol_level4" "spamhaus_drop" "ci_badguys" "et_bl1" "et_bl2" "bl_de1" "bl_agr" "crowdsec_bl" "whitelist_networks" "manual_blacklist")
 
 # GeoIP Configuration
 BLOCKED_COUNTRIES="BR,RU,CN,PL,IR"
@@ -238,7 +237,7 @@ apply_all_rules() {
     fi
     
     # 4. Apply blacklist rules (lower priority)
-    local blacklists=("firehol_level1" "firehol_level2" "firehol_level3" "spamhaus_drop" "ci_badguys" "et_bl1" "et_bl2" "bl_de1" "bl_agr" "crowdsec_bl")
+    local blacklists=("firehol_level1" "firehol_level2" "firehol_level3" "firehol_level4" "spamhaus_drop" "ci_badguys" "et_bl1" "et_bl2" "bl_de1" "bl_agr" "crowdsec_bl")
     
     for blacklist in "${blacklists[@]}"; do
         if ipset list "$blacklist" >/dev/null 2>&1; then
@@ -436,7 +435,7 @@ check_ip_status() {
     
     # Check other blacklists
     local blocked_in=""
-    local blacklists=("firehol_level1" "firehol_level2" "firehol_level3" "spamhaus_drop" "ci_badguys" "et_bl1" "et_bl2" "bl_de1" "bl_agr" "crowdsec_bl")
+    local blacklists=("firehol_level1" "firehol_level2" "firehol_level3" "firehol_level4" "spamhaus_drop" "ci_badguys" "et_bl1" "et_bl2" "bl_de1" "bl_agr" "crowdsec_bl")
     
     for blacklist in "${blacklists[@]}"; do
         if ipset list "$blacklist" >/dev/null 2>&1 && ipset test "$blacklist" "$ip" 2>/dev/null; then
@@ -470,6 +469,7 @@ handle_update() {
     create_netset "firehol_level1" "https://iplists.firehol.org/files/firehol_level1.netset" "FireHOL Level1"
     create_netset "firehol_level2" "https://iplists.firehol.org/files/firehol_level2.netset" "FireHOL Level2"
     create_netset "firehol_level3" "https://iplists.firehol.org/files/firehol_level3.netset" "FireHOL Level3"
+    create_netset "firehol_level4" "https://iplists.firehol.org/files/firehol_level4.netset" "FireHOL Level4"
     create_netset "spamhaus_drop" "https://www.spamhaus.org/drop/drop.txt" "Spamhaus DROP"
     create_netset "ci_badguys" "https://cinsarmy.com/list/ci-badguys.txt" "CI-Badguys"
     create_netset "et_bl1" "https://rules.emergingthreats.net/fwrules/emerging-Block-IPs.txt" "ET BLOCK1"
@@ -598,16 +598,17 @@ case "$1" in
         echo
         echo "Examples:"
         echo "  $0 update                     # Full update with all protections"
-        echo "  $0 add-whitelist 203.0.113.5 # Allow specific trusted IP"
-        echo "  $0 block-ip 192.168.1.100    # Block specific IP manually"
-        echo "  $0 block-ip 10.0.0.0/8       # Block entire network"
-        echo "  $0 unblock-ip 192.168.1.100  # Remove IP from manual blacklist"
-        echo "  $0 check-ip 8.8.8.8          # Check if IP is blocked"
+        echo "  $0 add-whitelist 203.0.113.5  # Allow specific trusted IP"
+        echo "  $0 block-ip 192.168.1.100     # Block specific IP manually"
+        echo "  $0 block-ip 10.0.0.0/8        # Block entire network"
+        echo "  $0 unblock-ip 192.168.1.100   # Remove IP from manual blacklist"
+        echo "  $0 check-ip 8.8.8.8           # Check if IP is blocked"
         echo "  $0 show-blocked               # List all manually blocked IPs"
         echo "  $0 status                     # Check current configuration"
         exit 1
         ;;
 esac
+
 
 
 
